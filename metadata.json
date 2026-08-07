@@ -1,0 +1,10 @@
+{
+  "name": "FireSocial",
+  "description": "A modern, feature-rich social media web application interface built with React and Tailwind CSS, featuring a dynamic theme system, interactive posts, messaging, notifications, and user profiles.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}
