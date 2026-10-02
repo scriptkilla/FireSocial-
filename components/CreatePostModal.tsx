@@ -1,11 +1,13 @@
 
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Image as ImageIcon, Video, Smile, BarChart2, MapPin, Globe, Lock, Users, Wand2, Loader2, Sparkles, Camera, Check as CheckIcon, Sticker, Search, Lightbulb, Calendar } from 'lucide-react';
+import { X, Image as ImageIcon, Video, Smile, BarChart2, MapPin, Globe, Lock, Users, Wand2, Loader2, Sparkles, Camera, Check as CheckIcon, Sticker, Search, Lightbulb, Calendar, Save, Trash2, Clock, FileText } from 'lucide-react';
 import { Profile, Theme, MediaItem, Post } from '../types';
 import AvatarDisplay from './AvatarDisplay';
 import { GoogleGenAI } from "@google/genai";
 import { GIPHY_API_KEY } from '../constants';
+
+const DRAFT_STORAGE_KEY = 'firesocial_post_draft';
 
 interface CreatePostModalProps {
     show: boolean;
@@ -34,6 +36,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = (props) => {
     const [scheduledTime, setScheduledTime] = useState('');
     const [showScheduler, setShowScheduler] = useState(false);
     
+    // Draft State
+    const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+    const [isDraftRestored, setIsDraftRestored] = useState(false);
+    const [showDraftSavedToast, setShowDraftSavedToast] = useState(false);
+    
     // UI State
     const [showAiMenu, setShowAiMenu] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -60,6 +67,54 @@ const CreatePostModal: React.FC<CreatePostModalProps> = (props) => {
 
     const remainingChars = CHARACTER_LIMIT - content.length;
     const isOverLimit = remainingChars < 0;
+
+    // Load draft when modal opens
+    useEffect(() => {
+        if (show) {
+            try {
+                const savedDraftRaw = localStorage.getItem(DRAFT_STORAGE_KEY);
+                if (savedDraftRaw) {
+                    const draft = JSON.parse(savedDraftRaw);
+                    if (draft && (draft.content || (draft.media && draft.media.length > 0) || draft.showPoll)) {
+                        setContent(draft.content || '');
+                        setMedia(draft.media || []);
+                        setShowPoll(draft.showPoll || false);
+                        if (draft.pollOptions) setPollOptions(draft.pollOptions);
+                        if (draft.privacy) setPrivacy(draft.privacy);
+                        setDraftSavedAt(draft.updatedAt || Date.now());
+                        setIsDraftRestored(true);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load post draft from localStorage", e);
+            }
+        } else {
+            setIsDraftRestored(false);
+        }
+    }, [show]);
+
+    // Auto-save draft on state change
+    useEffect(() => {
+        if (!show) return;
+        const timer = setTimeout(() => {
+            if (content.trim() || media.length > 0 || (showPoll && pollOptions.some(o => o.trim()))) {
+                const draft = {
+                    content,
+                    media,
+                    showPoll,
+                    pollOptions,
+                    privacy,
+                    updatedAt: Date.now()
+                };
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+                setDraftSavedAt(draft.updatedAt);
+            } else {
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
+                setDraftSavedAt(null);
+            }
+        }, 600);
+        return () => clearTimeout(timer);
+    }, [content, media, showPoll, pollOptions, privacy, show]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -119,6 +174,33 @@ const CreatePostModal: React.FC<CreatePostModalProps> = (props) => {
         }
     };
 
+    const handleManualSaveDraft = () => {
+        if (content.trim() || media.length > 0 || (showPoll && pollOptions.some(o => o.trim()))) {
+            const draft = {
+                content,
+                media,
+                showPoll,
+                pollOptions,
+                privacy,
+                updatedAt: Date.now()
+            };
+            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+            setDraftSavedAt(draft.updatedAt);
+            setShowDraftSavedToast(true);
+            setTimeout(() => setShowDraftSavedToast(false), 2500);
+        }
+    };
+
+    const handleClearDraft = () => {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setContent('');
+        setMedia([]);
+        setShowPoll(false);
+        setPollOptions(['', '']);
+        setDraftSavedAt(null);
+        setIsDraftRestored(false);
+    };
+
     const handleSubmit = () => {
         if ((!content.trim() && media.length === 0 && !showPoll && !quotingPost) || isOverLimit) return;
         
@@ -130,11 +212,24 @@ const CreatePostModal: React.FC<CreatePostModalProps> = (props) => {
             return;
         }
 
+        // Remove draft when post is created
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
         onCreatePost(content, media, type, showPoll ? validPollOptions : undefined, scheduledTime || undefined);
-        handleClose();
+        handleClose(false);
     };
 
-    const handleClose = () => {
+    const handleClose = (saveOnExit = true) => {
+        if (saveOnExit && (content.trim() || media.length > 0 || (showPoll && pollOptions.some(o => o.trim())))) {
+            const draft = {
+                content,
+                media,
+                showPoll,
+                pollOptions,
+                privacy,
+                updatedAt: Date.now()
+            };
+            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        }
         stopCamera();
         setContent('');
         setMedia([]);
@@ -145,8 +240,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = (props) => {
         setShowScheduler(false);
         setScheduledTime('');
         setPollOptions(['', '']);
+        setIsDraftRestored(false);
         onClose();
-    }
+    };
 
     const updatePollOption = (index: number, value: string) => {
         const newOptions = [...pollOptions];
@@ -292,17 +388,64 @@ const CreatePostModal: React.FC<CreatePostModalProps> = (props) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={handleClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={() => handleClose(true)}>
             <div 
-                className={`${cardBg} backdrop-blur-xl ${textColor} rounded-3xl w-full max-w-lg border ${borderColor} shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200`}
+                className={`${cardBg} backdrop-blur-xl ${textColor} rounded-3xl w-full max-w-lg border ${borderColor} shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 relative flex flex-col max-h-[90vh] my-auto`}
                 onClick={e => e.stopPropagation()}
             >
-                <div className={`flex justify-between items-center p-4 border-b ${borderColor}`}>
-                    <h2 className="text-xl font-bold">{quotingPost ? 'Quote Post' : 'Create Post'}</h2>
-                    <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
+                {showDraftSavedToast && (
+                    <div className="absolute top-14 sm:top-16 left-1/2 -translate-x-1/2 z-30 bg-emerald-600 text-white px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2">
+                        <CheckIcon size={14} /> Draft saved to local storage!
+                    </div>
+                )}
+
+                <div className={`flex justify-between items-center p-3.5 sm:p-4 border-b ${borderColor} shrink-0`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <h2 className="text-lg sm:text-xl font-bold truncate">{quotingPost ? 'Quote Post' : 'Create Post'}</h2>
+                        {draftSavedAt && (
+                            <span className="hidden sm:flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-semibold border border-emerald-500/20 flex-shrink-0">
+                                <CheckIcon size={12} /> Auto-saved
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                        {(content.trim() || media.length > 0 || showPoll) && (
+                            <button
+                                onClick={handleManualSaveDraft}
+                                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-xs font-bold transition-all flex items-center gap-1"
+                                title="Save as draft"
+                            >
+                                <Save size={14} /> <span className="hidden sm:inline">Save Draft</span>
+                            </button>
+                        )}
+                        {draftSavedAt && (
+                            <button
+                                onClick={handleClearDraft}
+                                className="p-1.5 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                                title="Discard draft"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        )}
+                        <button onClick={() => handleClose(true)} className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"><X size={18} className="sm:w-5 sm:h-5" /></button>
+                    </div>
                 </div>
 
-                <div className="p-4 relative">
+                <div className="p-3.5 sm:p-4 relative overflow-y-auto flex-1">
+                    {isDraftRestored && !isCameraOpen && (
+                        <div className="mb-3 px-3.5 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-center justify-between gap-2 animate-in fade-in">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Clock size={15} className="flex-shrink-0" />
+                                <span className="truncate">Restored draft ({new Date(draftSavedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
+                            </div>
+                            <button 
+                                onClick={handleClearDraft} 
+                                className="font-bold underline hover:text-amber-700 dark:hover:text-amber-300 transition-colors text-xs flex-shrink-0"
+                            >
+                                Discard
+                            </button>
+                        </div>
+                    )}
                     {isCameraOpen ? (
                         <div className="relative w-full bg-black rounded-2xl overflow-hidden aspect-video flex flex-col items-center justify-center">
                             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />

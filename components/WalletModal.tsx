@@ -387,44 +387,44 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   }, [allUsers, userSearchQuery]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-md animate-fadeIn overflow-y-auto">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-semibold text-sm border border-orange-500/30 animate-bounce">
-          <Sparkles className="text-orange-500" size={18} />
-          <span>{toastMessage}</span>
+        <div className="fixed top-14 sm:top-6 left-1/2 transform -translate-x-1/2 z-[60] bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 font-semibold text-xs sm:text-sm border border-orange-500/30 animate-bounce max-w-[90vw]">
+          <Sparkles className="text-orange-500 shrink-0" size={16} />
+          <span className="truncate">{toastMessage}</span>
         </div>
       )}
 
-      <div className={`relative w-full max-w-4xl ${cardBg} rounded-3xl border ${borderColor} shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}>
+      <div className={`relative w-full max-w-4xl ${cardBg} rounded-2xl sm:rounded-3xl border ${borderColor} shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] my-auto`}>
         
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-orange-500/10 via-transparent to-red-500/10">
-          <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-2xl bg-gradient-to-br ${currentTheme.from} ${currentTheme.to} text-white shadow-lg shadow-orange-500/20`}>
-              <Wallet size={24} />
+        <div className="p-3.5 sm:p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-orange-500/10 via-transparent to-red-500/10 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-br ${currentTheme.from} ${currentTheme.to} text-white shadow-lg shadow-orange-500/20 shrink-0`}>
+              <Wallet size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className={`text-2xl font-bold ${textColor} tracking-tight`}>FireWallet</h2>
-                <span className="px-2.5 py-0.5 text-xs font-bold bg-green-500/20 text-green-500 rounded-full flex items-center gap-1">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className={`text-lg sm:text-2xl font-bold ${textColor} tracking-tight truncate`}>FireWallet</h2>
+                <span className="hidden sm:flex px-2.5 py-0.5 text-xs font-bold bg-green-500/20 text-green-500 rounded-full items-center gap-1 shrink-0">
                   <ShieldCheck size={12} /> Active & Secured
                 </span>
               </div>
-              <p className={`text-xs ${textSecondary}`}>Manage Embers, USD Earnings, Transfers & Payment Methods</p>
+              <p className={`text-[11px] sm:text-xs ${textSecondary} truncate`}>Manage Embers, USD Earnings, Transfers & Payment Methods</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className={`p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 ${textSecondary} transition-colors`}
+            className={`p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 ${textSecondary} transition-colors shrink-0`}
           >
-            <X size={20} />
+            <X size={18} className="sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-6 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2 overflow-x-auto no-scrollbar bg-black/5 dark:bg-white/5 py-2">
+        <div className="px-3 sm:px-6 border-b border-gray-200 dark:border-gray-800 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar bg-black/5 dark:bg-white/5 py-2 shrink-0">
           {[
             { id: 'overview', label: 'Overview', icon: Wallet },
             { id: 'buy_embers', label: 'Buy Embers 🔥', icon: Flame, badge: `${emberBalance.toLocaleString()}` },
@@ -439,16 +439,16 @@ export const WalletModal: React.FC<WalletModalProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap shrink-0 ${
                   isActive
                     ? `bg-gradient-to-r ${currentTheme.from} ${currentTheme.to} text-white shadow-md scale-[1.02]`
                     : `${textSecondary} hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-white`
                 }`}
               >
-                <Icon size={16} />
+                <Icon size={15} />
                 <span>{tab.label}</span>
                 {tab.badge && (
-                  <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-orange-500/20 text-orange-500'}`}>
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-orange-500/20 text-orange-500'}`}>
                     {tab.badge}
                   </span>
                 )}
@@ -458,7 +458,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
         </div>
 
         {/* Body Content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-3.5 sm:p-6 overflow-y-auto flex-1 space-y-4 sm:space-y-6">
 
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (

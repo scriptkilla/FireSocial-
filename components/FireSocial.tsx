@@ -182,7 +182,7 @@ export const FireSocial: React.FC = () => {
     const [walletInitialTab, setWalletInitialTab] = useState<'overview' | 'buy_embers' | 'deposit_withdraw' | 'transfer' | 'methods' | 'history'>('overview');
 
     // Widget Layout State
-    const [widgetOrder, setWidgetOrder] = useState<string[]>(['weather', 'stocks', 'crypto', 'trending', 'suggestions', 'communities']);
+    const [widgetOrder, setWidgetOrder] = useState<string[]>(['activityStreak', 'weather', 'stocks', 'crypto', 'trending', 'suggestions', 'communities']);
     const [dragEnabledIndex, setDragEnabledIndex] = useState<number | null>(null);
     const dragItem = useRef<number | null>(null);
     const dragNode = useRef<HTMLDivElement | null>(null);
@@ -1213,6 +1213,52 @@ export const FireSocial: React.FC = () => {
         );
 
         switch(widgetId) {
+            case 'activityStreak': {
+                const userPostsCount = posts.filter(p => p.username === profile.username).length || profile.posts || 0;
+                const streakDays = profile.streak || 1;
+                return (
+                    <div className={`${cardBg} backdrop-blur-xl rounded-3xl p-5 border ${borderColor} mb-4 relative overflow-hidden group shadow-sm`}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="font-bold flex items-center gap-2 text-xs uppercase tracking-wider text-orange-500 dark:text-orange-400">
+                                <Flame size={18} className="animate-pulse text-amber-500 fill-amber-500" />
+                                Activity Streak
+                            </h3>
+                            {Grip}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="bg-black/5 dark:bg-white/5 p-3 rounded-2xl border border-orange-500/20 flex flex-col items-center justify-center text-center">
+                                <div className="flex items-center gap-1 text-amber-500 font-black text-2xl">
+                                    <Flame size={20} fill="currentColor" />
+                                    <span>{streakDays}</span>
+                                </div>
+                                <span className={`text-[11px] font-semibold ${textSecondary} mt-0.5`}>Day Streak</span>
+                            </div>
+                            <div className="bg-black/5 dark:bg-white/5 p-3 rounded-2xl border border-orange-500/20 flex flex-col items-center justify-center text-center">
+                                <div className="flex items-center gap-1 text-orange-500 font-black text-2xl">
+                                    <BarChart2 size={20} />
+                                    <span>{userPostsCount}</span>
+                                </div>
+                                <span className={`text-[11px] font-semibold ${textSecondary} mt-0.5`}>Total Posts</span>
+                            </div>
+                        </div>
+                        <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-red-500/10 p-3 rounded-2xl border border-orange-500/20 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Zap size={16} className="text-amber-500" />
+                                <span className="text-xs font-medium">Daily Goal</span>
+                            </div>
+                            <span className="text-xs font-bold text-orange-500">
+                                {userPostsCount > 0 ? 'Active Today 🔥' : 'Post to extend streak!'}
+                            </span>
+                        </div>
+                        <button 
+                            onClick={() => { setActivePage('profile'); setProfileTab('streaks'); }} 
+                            className={`mt-3 w-full text-center text-xs font-bold ${currentTheme.text} hover:underline`}
+                        >
+                            View Streak & Achievements
+                        </button>
+                    </div>
+                );
+            }
             case 'weather':
                 return (
                     <div className={`${cardBg} backdrop-blur-xl rounded-3xl p-4 border ${borderColor} text-white relative overflow-hidden mb-4`}>
@@ -1871,10 +1917,10 @@ export const FireSocial: React.FC = () => {
     );
     
     const MobileNavItem: React.FC<{ page: Page | string, label: string, icon: React.ElementType, current: Page, onClick: () => void }> = ({ page, label, icon: Icon, current, onClick }) => (
-        <button onClick={onClick} className={`relative flex flex-col items-center gap-1 p-2 rounded-lg w-20 flex-shrink-0 transition-colors ${current === page ? currentTheme.text : textSecondary}`}>
-            {current === page && <div className={`absolute -top-px left-1/2 -translate-x-1/2 h-1 w-8 rounded-full bg-gradient-to-r ${currentTheme.from} ${currentTheme.to}`}></div>}
-            <Icon size={24} />
-            <span className="text-xs font-medium truncate">{label}</span>
+        <button onClick={onClick} className={`relative flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl min-w-[64px] flex-shrink-0 transition-all ${current === page ? `${currentTheme.text} font-bold scale-105` : textSecondary}`}>
+            {current === page && <div className={`absolute top-0 left-1/2 -translate-x-1/2 h-1 w-6 rounded-full bg-gradient-to-r ${currentTheme.from} ${currentTheme.to}`}></div>}
+            <Icon size={20} />
+            <span className="text-[10px] font-semibold tracking-tight truncate max-w-[58px]">{label}</span>
         </button>
     );
 
@@ -1887,17 +1933,46 @@ export const FireSocial: React.FC = () => {
             
             {/* Toast Notification */}
             {toast && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] pointer-events-none">
-                    <div className={`animate-in slide-in-from-top-2 fade-in duration-300 ${cardBg} backdrop-blur-xl border ${borderColor} px-6 py-3 rounded-full shadow-2xl flex items-center gap-3`}>
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-1 rounded-full shadow-sm">
-                            <Check size={16} strokeWidth={3} />
+                <div className="fixed top-14 sm:top-6 left-1/2 -translate-x-1/2 z-[200] pointer-events-none w-full max-w-xs sm:max-w-md px-4">
+                    <div className={`animate-in slide-in-from-top-2 fade-in duration-300 ${cardBg} backdrop-blur-xl border ${borderColor} px-4 sm:px-6 py-2.5 sm:py-3 rounded-full shadow-2xl flex items-center justify-center gap-2.5`}>
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-1 rounded-full shadow-sm flex-shrink-0">
+                            <Check size={14} strokeWidth={3} />
                         </div>
-                        <span className={`font-bold text-sm ${textColor}`}>{toast.message}</span>
+                        <span className={`font-bold text-xs sm:text-sm ${textColor} truncate`}>{toast.message}</span>
                     </div>
                 </div>
             )}
 
-            <div className="container mx-auto grid grid-cols-12 gap-8 items-start p-2 sm:p-4">
+            {/* Mobile Top Header */}
+            <header className={`lg:hidden sticky top-0 z-40 ${cardBg} backdrop-blur-xl border-b ${borderColor} px-3.5 py-2.5 flex items-center justify-between shadow-sm`}>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={handleHomePageSelect}>
+                    <div className={`p-1.5 rounded-xl bg-gradient-to-br ${currentTheme.from} ${currentTheme.to} shadow-md`}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.1.2-2.2.5-3.3.3.3.5.5.5.8z"></path>
+                        </svg>
+                    </div>
+                    <span className={`text-lg font-black ${textColor} tracking-tight`}>FireSocial</span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                    <button 
+                        onClick={() => { setWalletInitialTab('overview'); setShowWalletModal(true); }} 
+                        className="px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-500 font-bold text-xs flex items-center gap-1 border border-orange-500/30 active:scale-95 transition-transform"
+                    >
+                        <Flame size={13} fill="currentColor" className="animate-pulse text-amber-500" />
+                        <span>{profile.emberBalance?.toLocaleString() || 0}</span>
+                    </button>
+                    <button onClick={() => setShowNotifications(true)} className={`p-1.5 rounded-xl hover:bg-white/10 ${textSecondary} relative`}>
+                        <Bell size={18} />
+                        {unreadNotificationsCount > 0 && <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></div>}
+                    </button>
+                    <button onClick={() => setDarkMode(!darkMode)} className={`p-1.5 rounded-xl hover:bg-white/10 ${textSecondary}`}>
+                        {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                </div>
+            </header>
+
+            <div className="container mx-auto grid grid-cols-12 gap-4 lg:gap-8 items-start p-2 sm:p-4">
                 <aside className="col-span-3 sticky top-4 hidden lg:flex flex-col gap-4">
                     <div className={`${cardBg} backdrop-blur-xl rounded-3xl p-4 border ${borderColor}`}>
                         <div className="pl-2 mb-6 flex items-center gap-3">
